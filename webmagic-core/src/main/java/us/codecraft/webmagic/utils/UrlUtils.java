@@ -22,11 +22,11 @@ public class UrlUtils {
 
     /**
      * canonicalizeUrl
-     * <p/>
+     * <br>
      * Borrowed from Jsoup.
      *
-     * @param url
-     * @param refer
+     * @param url url
+     * @param refer refer
      * @return canonicalizeUrl
      */
     public static String canonicalizeUrl(String url, String refer) {
@@ -51,8 +51,8 @@ public class UrlUtils {
 
     /**
      *
-     * @param url
-     * @return
+     * @param url url
+     * @return new url
      */
     public static String encodeIllegalCharacterInUrl(String url) {
         //TODO more charator support
@@ -80,42 +80,16 @@ public class UrlUtils {
         if (i > 0) {
             domain = StringUtils.substring(domain, 0, i);
         }
-        return domain;
+        return removePort(domain);
     }
 
-    /**
-     * allow blank space in quote
-     */
-    private static Pattern patternForHrefWithQuote = Pattern.compile("(<a[^<>]*href=)[\"']([^\"'<>]*)[\"']", Pattern.CASE_INSENSITIVE);
-
-    /**
-     * disallow blank space without quote
-     */
-    private static Pattern patternForHrefWithoutQuote = Pattern.compile("(<a[^<>]*href=)([^\"'<>\\s]+)", Pattern.CASE_INSENSITIVE);
-
-    public static String fixAllRelativeHrefs(String html, String url) {
-        html = replaceByPattern(html, url, patternForHrefWithQuote);
-        html = replaceByPattern(html, url, patternForHrefWithoutQuote);
-        return html;
-    }
-
-    public static String replaceByPattern(String html, String url, Pattern pattern) {
-        StringBuilder stringBuilder = new StringBuilder();
-        Matcher matcher = pattern.matcher(html);
-        int lastEnd = 0;
-        boolean modified = false;
-        while (matcher.find()) {
-            modified = true;
-            stringBuilder.append(StringUtils.substring(html, lastEnd, matcher.start()));
-            stringBuilder.append(matcher.group(1));
-            stringBuilder.append("\"").append(canonicalizeUrl(matcher.group(2), url)).append("\"");
-            lastEnd = matcher.end();
+    public static String removePort(String domain) {
+        int portIndex = domain.indexOf(":");
+        if (portIndex != -1) {
+            return domain.substring(0, portIndex);
+        }else {
+            return domain;
         }
-        if (!modified) {
-            return html;
-        }
-        stringBuilder.append(StringUtils.substring(html, lastEnd));
-        return stringBuilder.toString();
     }
 
     public static List<Request> convertToRequests(Collection<String> urls) {

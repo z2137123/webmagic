@@ -25,7 +25,7 @@ public class Html extends HtmlNode {
 	/**
 	 * Disable jsoup html entity escape. It can be set just before any Html instance is created.
 	 */
-	public static boolean DISABLE_HTML_ENTITY_ESCAPE = true;
+	public static boolean DISABLE_HTML_ENTITY_ESCAPE = false;
 
 	/**
 	 * Disable jsoup html entity escape. It is a hack way only for jsoup 1.7.2.
@@ -34,6 +34,7 @@ public class Html extends HtmlNode {
 		if (DISABLE_HTML_ENTITY_ESCAPE && !INITED) {
 			Entities.EscapeMode.base.getMap().clear();
 			Entities.EscapeMode.extended.getMap().clear();
+			Entities.EscapeMode.xhtml.getMap().clear();
 			INITED = true;
 		}
 	}
@@ -42,6 +43,16 @@ public class Html extends HtmlNode {
      * Store parsed document for better performance when only one text exist.
      */
     private Document document;
+
+    public Html(String text, String url) {
+        try {
+            disableJsoupHtmlEntityEscape();
+            this.document = Jsoup.parse(text, url);
+        } catch (Exception e) {
+            this.document = null;
+            logger.warn("parse document error ", e);
+        }
+    }
 
     public Html(String text) {
         try {
@@ -67,8 +78,8 @@ public class Html extends HtmlNode {
     }
 
     /**
-     * @param selector
-     * @return
+     * @param selector selector
+     * @return result
      */
     public String selectDocument(Selector selector) {
         if (selector instanceof ElementSelector) {

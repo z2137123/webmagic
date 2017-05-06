@@ -17,7 +17,7 @@ import us.codecraft.webmagic.scheduler.component.DuplicateRemover;
  */
 public class RedisScheduler extends DuplicateRemovedScheduler implements MonitorableScheduler, DuplicateRemover {
 
-    private JedisPool pool;
+    protected JedisPool pool;
 
     private static final String QUEUE_PREFIX = "queue_";
 
@@ -48,11 +48,7 @@ public class RedisScheduler extends DuplicateRemovedScheduler implements Monitor
     public boolean isDuplicate(Request request, Task task) {
         Jedis jedis = pool.getResource();
         try {
-            boolean isDuplicate = jedis.sismember(getSetKey(task), request.getUrl());
-            if (!isDuplicate) {
-                jedis.sadd(getSetKey(task), request.getUrl());
-            }
-            return isDuplicate;
+            return jedis.sadd(getSetKey(task), request.getUrl()) > 0;
         } finally {
             pool.returnResource(jedis);
         }
@@ -89,7 +85,7 @@ public class RedisScheduler extends DuplicateRemovedScheduler implements Monitor
                 Request o = JSON.parseObject(new String(bytes), Request.class);
                 return o;
             }
-            Request request = new Request(url);
+                Request request = new Request(url);
             return request;
         } finally {
             pool.returnResource(jedis);
@@ -102,6 +98,11 @@ public class RedisScheduler extends DuplicateRemovedScheduler implements Monitor
 
     protected String getQueueKey(Task task) {
         return QUEUE_PREFIX + task.getUUID();
+    }
+
+    protected String getItemKey(Task task)
+    {
+        return ITEM_PREFIX + task.getUUID();
     }
 
     @Override
@@ -119,7 +120,7 @@ public class RedisScheduler extends DuplicateRemovedScheduler implements Monitor
     public int getTotalRequestsCount(Task task) {
         Jedis jedis = pool.getResource();
         try {
-            Long size = jedis.scard(getQueueKey(task));
+            Long size = jedis.scard(getSetKey(task));
             return size.intValue();
         } finally {
             pool.returnResource(jedis);
